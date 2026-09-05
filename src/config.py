@@ -151,7 +151,8 @@ IMAP_PROVIDERS = {
     # "Outlook / 365" promised something this app cannot deliver: Microsoft
     # turned off basic authentication for work and school (Microsoft 365)
     # mailboxes, so an app password there is refused no matter what host is
-    # typed in -- those accounts need OAuth, which we only implement for Google.
+    # typed in -- those accounts need OAuth, which this app does not do at all
+    # (the Google sign-in that used to be here went in 2.0.0).
     # The label now names the account type that can actually sign in, rather
     # than inviting a work address into a dead end. The host is unchanged and
     # deliberate: consumer Outlook.com mailboxes live on the office365.com IMAP

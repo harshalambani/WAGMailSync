@@ -330,11 +330,16 @@ fun MailSetupWizardScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
+                            // The same three marks Windows draws, rather
+                            // than the words "OK" and "X": a column of ticks
+                            // reads as a checklist at a glance, and five lines
+                            // that settle on "OK" are not the ticks the rest of
+                            // the app -- and this screen's own copy -- promise.
                             Text(
                                 when (result) {
-                                    true -> "OK"
-                                    false -> "X"
-                                    null -> "..."
+                                    true -> "\u2713"
+                                    false -> "\u2715"
+                                    null -> "\u2026"
                                 },
                                 style = MaterialTheme.typography.labelLarge,
                                 color = when (result) {

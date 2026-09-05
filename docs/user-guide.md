@@ -50,20 +50,6 @@ your real password.
 
 This does not expire. To disconnect later, click **Forget saved password**.
 
-### A note on Google sign-in
-
-Earlier versions could connect to Gmail through a Google account instead of an
-app password. **That route was removed in version 2.0.0.** It never worked for
-most people: the app has not been through Google's verification process, so
-Google only let accounts that had been added by hand as test users sign in at
-all — there was no way to add yourself — and the sign-in expired roughly every
-seven days.
-
-If you were signed in with Google, the app says so once on the next start and
-then asks for an app password. Nothing already in your mailbox is affected, and
-nothing already synced is re-sent. An app password reaches Gmail perfectly well
-and does not expire.
-
 ---
 
 ## 3. Exporting a WhatsApp chat to a file

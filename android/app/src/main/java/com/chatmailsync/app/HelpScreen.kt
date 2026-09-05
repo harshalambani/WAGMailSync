@@ -17,8 +17,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -27,7 +34,7 @@ import androidx.compose.ui.unit.sp
 // not justified for this single FAQ screen yet. The questions, and their
 // order, are the same on all three surfaces (this screen, help.html and
 // docs/user-guide.md); only the answers are written per platform.
-private val FAQ = listOf(
+internal val FAQ = listOf(
     "How do I export a chat from WhatsApp?" to
         "Open the chat in WhatsApp -> tap the three-dot menu -> More -> Export chat. " +
         "Choose \"Include media\" for a .zip with photos/videos, or \"Without media\" for a plain .txt. " +
@@ -224,6 +231,51 @@ private val FAQ = listOf(
         "ask you to clear a folder by hand.",
 )
 
+// Bare hostnames as they appear in the answers above. Written out rather
+// than matched with a URL regex: there is exactly one link in this FAQ, an
+// answer that invites the reader to go and check the source, and a regex here
+// would be a general-purpose linkifier standing in for a single known string.
+internal val FAQ_LINKS = mapOf(
+    "github.com/harshalambani/ChatMailSync" to "https://github.com/harshalambani/ChatMailSync",
+)
+
+/**
+ * An answer with its known links made tappable.
+ *
+ * The FAQ entries stay plain strings -- they are compared question-for-question
+ * against help.html and docs/user-guide.md by tests/test_faq_parity.py, and an
+ * AnnotatedString in the table would put Compose markup into text that two
+ * other surfaces have to match.
+ */
+internal fun linkify(text: String): AnnotatedString = buildAnnotatedString {
+    var rest = text
+    outer@ while (rest.isNotEmpty()) {
+        // Earliest occurrence wins, and on a tie the longer hostname, so
+        // one that is a prefix of another cannot take the match off it.
+        val hit = FAQ_LINKS.keys
+            .map { it to rest.indexOf(it) }
+            .filter { it.second >= 0 }
+            .minWithOrNull(
+                compareBy<Pair<String, Int>> { it.second }.thenByDescending { it.first.length },
+            )
+        if (hit == null) {
+            append(rest)
+            break@outer
+        }
+        val (shown, at) = hit
+        append(rest.substring(0, at))
+        withLink(
+            LinkAnnotation.Url(
+                FAQ_LINKS.getValue(shown),
+                TextLinkStyles(
+                    style = SpanStyle(textDecoration = TextDecoration.Underline),
+                ),
+            ),
+        ) { append(shown) }
+        rest = rest.substring(at + shown.length)
+    }
+}
+
 /**
  * One line of the FAQ, with its "Q" or "A" tag hanging in a fixed gutter so the
  * two halves of an entry read as a pair rather than as two paragraphs.
@@ -242,7 +294,7 @@ private fun QaLine(tag: String, text: String, style: TextStyle) {
                 .width(20.dp)
                 .alignByBaseline(),
         )
-        Text(text = text, style = style, modifier = Modifier.alignByBaseline())
+        Text(text = linkify(text), style = style, modifier = Modifier.alignByBaseline())
     }
 }
 
