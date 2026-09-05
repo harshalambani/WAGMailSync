@@ -4134,9 +4134,12 @@ class _MailWizardPanel(_Panel):
         self._password = ""
         self._custom_host = ""
         self._custom_port = "993"
-        # name -> True/False as each stage reports in; a name absent from here
-        # has not been reached yet and draws greyed out.
-        self._stage_results: dict = {}
+        # No dict of stage results here on purpose. There used to be one,
+        # documented as the thing the marks were drawn from -- and nothing
+        # ever wrote to it, because the marks are set on the live widgets as
+        # each event arrives and step 4 always starts a fresh check on entry,
+        # which reports all five again. A second copy of that state would only
+        # be a copy that can disagree.
         self._connecting = False
         self._outcome: "tuple[bool, str] | None" = None
 
@@ -4471,7 +4474,6 @@ class _MailWizardPanel(_Panel):
         self._start_check()
 
     def _start_check(self) -> None:
-        self._stage_results = {}
         self._outcome = None
         self._connecting = True
         result_q: queue.Queue = queue.Queue()
