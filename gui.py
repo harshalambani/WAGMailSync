@@ -367,6 +367,16 @@ def _should_show_oauth_removed_notice(settings: dict, was_oauth_user: bool) -> b
     return was_oauth_user
 
 
+def _should_scan_at_launch(auto_watch_enabled: bool, folder) -> bool:
+    """Whether to scan the watched folder once on startup.
+
+    Exactly the condition the periodic timer arms itself under, and that is
+    the point: launch is not a licence to scan a folder someone has switched
+    the watcher off for. "Check now" remains the way to force one.
+    """
+    return bool(auto_watch_enabled) and folder is not None
+
+
 def _inbox_has_files() -> bool:
     """Whether anything is still queued in inbox/.
 
@@ -700,6 +710,17 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
         # applied, and inbox/ still holds the answer.
         self._apply_synced_file_policies()
         self._update_watch_ui()
+        # One scan now, before arming the timer. The timer's first fire is a
+        # whole interval away, so a file dropped into the watched folder while
+        # the app was closed sat there unnoticed -- with the app open, idle,
+        # and looking straight at it -- for as long as the interval is. Gated
+        # on the same switch as the timer: auto-watch off means no scan here
+        # either. "Check now" stays the way to force one regardless.
+        if _should_scan_at_launch(
+            bool(self._settings.get("auto_watch_enabled")),
+            self._watched_folder(),
+        ):
+            self._run_watch_scan(manual=False)
         self._schedule_watch_timer()
 
     # ------------------------------------------------------------------

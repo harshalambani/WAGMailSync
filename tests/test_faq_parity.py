@@ -68,7 +68,13 @@ def user_guide_questions() -> list[str]:
 
 def help_screen_questions() -> list[str]:
     body = HELP_SCREEN.read_text(encoding="utf-8")
-    faq = body[body.index("private val FAQ = listOf(") :]
+    # Matched without the visibility modifier: `private` became `internal`
+    # when HelpLinkTest needed to read the table, and anchoring on the old
+    # spelling made this parser silently find nothing. The guard test above
+    # is what caught that, and it is the reason it exists.
+    start = re.search(r"^\w* ?val FAQ = listOf\($", body, re.M)
+    assert start is not None, "HelpScreen.kt no longer declares `val FAQ = listOf(`"
+    faq = body[start.start() :]
     faq = faq[: faq.index("\n)\n")]
     # A question is the string literal on a line ending in `" to`; answers are
     # concatenated with `+` and never end that way.
