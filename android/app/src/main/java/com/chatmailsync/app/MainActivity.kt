@@ -158,6 +158,16 @@ internal fun tabForRoute(route: String?): String? = when {
     else -> null
 }
 
+/**
+ * Whether to scan the watched folder once at startup.
+ *
+ * Exactly the condition the periodic work is enqueued under, and that is the
+ * point: launch is not a licence to scan a folder someone has switched the
+ * watcher off for. "Check now" remains the way to force one.
+ */
+internal fun shouldScanAtLaunch(autoWatchOn: Boolean, watchedFolderUri: String?): Boolean =
+    autoWatchOn && !watchedFolderUri.isNullOrBlank()
+
 /** The collapsed sync bar — this is a sync app, so "is anything syncing right
  * now" deserves dedicated, permanent real estate rather than being buried in
  * whichever tab happens to be open. Shows live progress while a sync (manual
@@ -701,6 +711,20 @@ fun ChatMailApp(
         setAutoWatch(false)
         AppPrefs.setWatchedFolderUri(context, null)
         watchedFolderUri = null
+    }
+
+    // One scan at launch. The periodic worker's first run is up to a whole
+    // interval away -- WorkManager's floor alone makes that 15 minutes -- so
+    // a file dropped into the watched folder while the app was closed sat
+    // there unnoticed with the app open and idle in front of it.
+    //
+    // LaunchedEffect(Unit): once per composition of this screen, which is
+    // once per process. ON_RESUME would re-run it every time the user came
+    // back from another app, which is a scan nobody asked for.
+    LaunchedEffect(Unit) {
+        if (shouldScanAtLaunch(autoWatchEnabled, watchedFolderUri)) {
+            WatchFolderWorker.enqueueOnce(context)
+        }
     }
 
     // ---- Background health (Batch E) -----------------------------------

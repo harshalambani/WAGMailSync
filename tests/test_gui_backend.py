@@ -1112,3 +1112,26 @@ def test_the_poll_loop_survives_the_worker_clearing_itself_mid_drain():
     gui.App._poll_sync_queue(app)          # must not raise
     assert app.seen == ["log", "error"]
     assert app.scheduled == 0              # run is over: no further timer chain
+
+
+# ----------------------------------------------------------------------
+# Launch-time watched-folder scan
+# ----------------------------------------------------------------------
+
+
+def test_launch_scan_gate_matches_the_periodic_timer():
+    """The startup scan runs under exactly the timer's condition, and no wider.
+
+    The gate is the whole feature here. A scan at launch that ignored the
+    auto-watch switch would be the app doing on startup precisely what the
+    user had turned off; one that ignored an unset folder would have nothing
+    to scan. "Check now" stays the way to force a scan regardless.
+    """
+    from pathlib import Path
+
+    folder = Path("C:/exports")
+
+    assert gui._should_scan_at_launch(True, folder) is True
+    assert gui._should_scan_at_launch(False, folder) is False
+    assert gui._should_scan_at_launch(True, None) is False
+    assert gui._should_scan_at_launch(False, None) is False
